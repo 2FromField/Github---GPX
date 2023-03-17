@@ -104,9 +104,26 @@ for k in range(len(times)-2):
 
 # Vitesse in meters/sec*3.6 -> km/h
 vitesse = []
-for i in range(len(all_distance)-1):
+for i in range(0,len(all_distance)-1):
     vitesse.append((all_distance[i+1]/all_duration[i+1])*3.6)
 
+# Extrapolation of the first and last interval by an average over the previous or next 10 values
+vitesse.insert(0,np.mean(vitesse[0:10]))
+vitesse.insert(len(vitesse)+1,np.mean(vitesse[0:10]))
+
+# Colour in 10-data intervals according to average speed
+colors = []
+for k in range(0,len(vitesse),10):
+    if np.mean(vitesse[k:k+10]) < 5.0:
+        colors.extend(['red']*10)
+    elif np.mean(vitesse[k:k+10]) < 10.0 and np.mean(vitesse[k:k+10]) > 5.0:
+        colors.extend(['orange']*10)
+    elif np.mean(vitesse[k:k+10]) < 15.0 and np.mean(vitesse[k:k+10]) > 10.0:
+        colors.extend(['yellow']*10)
+    elif np.mean(vitesse[k:k+10]) < 20.0 and np.mean(vitesse[k:k+10]) > 15.0:
+        colors.extend(['green']*10)
+    else:
+        colors.extend(['blue']*10)
 
 
 #### CARTOGRAPHY
@@ -117,18 +134,10 @@ for k in range(len(latitude)):
 
 # Creating a map centred around a coordinate
 fmap = folium.Map(location=[latitude[0], longitude[0]], tiles='OpenStreetMap', zoom_start=12)
-# Display of the race route on the map
-for g in range(len(latitude)-3):
-    if vitesse[g] < 5.0:
-        folium.PolyLine([(latitude[g],longitude[g]),(latitude[g+1],longitude[g+1])], color='green', weight=2.5, opacity=0.8).add_to(fmap)
-    elif vitesse[g] < 10.0 and vitesse[g] > 5.0:
-        folium.PolyLine([(latitude[g],longitude[g]),(latitude[g+1],longitude[g+1])], color='orange', weight=2.5, opacity=0.8).add_to(fmap)
-    elif vitesse[g] < 15.0 and vitesse[g] > 10.0:
-        folium.PolyLine([(latitude[g],longitude[g]),(latitude[g+1],longitude[g+1])], color='red', weight=2.5, opacity=0.8).add_to(fmap)
-    elif vitesse[g] < 20.0 and vitesse[g] > 15.0:
-        folium.PolyLine([(latitude[g],longitude[g]),(latitude[g+1],longitude[g+1])], color='darkred', weight=2.5, opacity=0.8).add_to(fmap)
 
-
+# Lines of the map
+for g in range(len(latitude)-1):
+    folium.PolyLine([(latitude[g],longitude[g]),(latitude[g+1],longitude[g+1])], color=colors[g], weight=2.5, opacity=0.8).add_to(fmap)
 
 # Adding markers on the map
 ## START
@@ -149,6 +158,8 @@ folium.Marker([latitude[MaxAltitudeIndex],longitude[MaxAltitudeIndex]],
 folium.Marker([latitude[MinAltitudeIndex],longitude[MinAltitudeIndex]],
               popup=f"Altitude trough: {round(MinAltitude,2)}m",
               icon=folium.Icon(color='lightblue',icon='glyphicon glyphicon-chevron-down')).add_to(fmap)
+
+folium.LayerControl('topleft', collapsed=False).add_to(fmap)
 
 # Position at each hour
 for t in range(len(perHour[1:-1])):
@@ -199,6 +210,6 @@ plt.annotate(str(round(MaxAltitude,2))+'m',xy=(MaxAltitudeIndex,MaxAltitude+0.00
 plt.annotate(str(round(MinAltitude,2))+'m',xy=(MinAltitudeIndex,MinAltitude+0.001),xytext=(MinAltitudeIndex-300,MinAltitude-40),arrowprops=dict(facecolor='cyan',shrink=0.05),fontweight='bold',c='c')
 plt.grid(axis='y')
 ###
-plt.show()
+# plt.show()
 
 
